@@ -75,7 +75,7 @@ class WorkflowActor extends Actor with FSM[State, Data] {
   when(Notify) {
     case Event(DoNotify(message: Message), InitializedWorkflow(instance)) if message.completion != 100 =>
       log.info(s"Notify the message $message")
-      goto(SendMessage)
+      goto(WaitingForMessage)
     case Event(DoNotify(message: Message), InitializedWorkflow(instance)) if message.completion == 100 =>
       log.info(s"Message $message fully processed")
       goto(SendMessage)

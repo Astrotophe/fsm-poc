@@ -28,7 +28,7 @@ object Workflows {
     Message(1,1,0), Message(1,2,0)
   )
 
-  val Workflow2 = workflow(UUID.randomUUID().toString) withTitle "ContributionDigital" withDescription "Ceci est un work" hasSteps Seq(
+  val Workflow2 = workflow(UUID.randomUUID().toString) withTitle "ContributionDigital" withDescription "Ceci est un workflow permettant la contribution digitale" hasSteps Seq(
     Message(2,1,0), Message(2,2,0), Message(3,3,0)
   )
 
