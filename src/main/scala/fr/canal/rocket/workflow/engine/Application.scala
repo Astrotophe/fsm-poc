@@ -1,4 +1,3 @@
-//#full-example
 package fr.canal.rocket.workflow.engine
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
