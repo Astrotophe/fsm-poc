@@ -24,12 +24,12 @@ object Workflows {
     def hasSteps(steps: Seq[Message]) = Workflow(workflowDescriptionBuilder.id, workflowDescriptionBuilder.title, description, steps)
   }
 
-  val Workflow1 = workflow(UUID.randomUUID().toString) withTitle "Workflow1" withDescription "Une jolie description" hasSteps Seq(
+  val Workflow1 = workflow(UUID.randomUUID().toString) withTitle "IngestEST" withDescription "Ceci est un workflow decrivant un ingest EST" hasSteps Seq(
     Message(1,1,0), Message(1,2,0)
   )
 
-  val Workflow2 = workflow(UUID.randomUUID().toString) withTitle "Workflow2" withDescription "Une jolie description" hasSteps Seq(
-    Message(2,1,0), Message(2,2,0)
+  val Workflow2 = workflow(UUID.randomUUID().toString) withTitle "ContributionDigital" withDescription "Ceci est un work" hasSteps Seq(
+    Message(2,1,0), Message(2,2,0), Message(3,3,0)
   )
 
   val AllWorkflows = Set(Workflow1, Workflow2)

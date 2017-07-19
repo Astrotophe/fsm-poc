@@ -1,13 +1,22 @@
 package fr.canal.rocket.workflow.engine
 
 import akka.actor.{Actor, FSM}
-import fr.canal.rocket.workflow.engine.WorkflowActor.WorkflowStarted
+import fr.canal.rocket.workflow.engine.WorkflowActor.{DoNotify, ProcessNextMessage, TaskToProcess, WorkflowStarted}
 import fr.canal.rocket.workflow.engine.model.WorkflowInstance
 
 
 object WorkflowActor {
-  case class ReceiveMessage(message: Int)
+
+  case class TaskToProcess(message: Message)
+
   case class StartWorkflow(instance: WorkflowInstance)
+
+  case object ProcessNextMessage
+
+  case class DoNotify(message: Message)
+
+  case class MessageUpdate(message: Message)
+
   case class WorkflowStarted(id: String)
 
 }
@@ -16,6 +25,8 @@ object WorkflowActor {
 sealed trait State
 
 case object Idle extends State
+
+case object WaitingForInputs extends State
 
 case object SendMessage extends State
 
@@ -31,7 +42,7 @@ case object Uninitialized extends Data
 case class InitializedWorkflow(instance: WorkflowInstance) extends Data
 
 case class WorkflowInProgress(instance: WorkflowInstance, currentStep: Message) extends Data {
-  def step = {
+  def step: Message = {
     instance.workflow.steps(1)
   }
 }
@@ -44,19 +55,30 @@ class WorkflowActor extends Actor with FSM[State, Data] {
 
   when(Idle) {
     case Event(WorkflowActor.StartWorkflow(instance: WorkflowInstance), Uninitialized) =>
-      println(s"Workflow instance ${instance.id} begins")
-      goto(WaitingForMessage) using InitializedWorkflow(instance) replying WorkflowStarted(instance.id)
+      log.info(s"Workflow instance ${instance.id} begins")
+      goto(SendMessage) using InitializedWorkflow(instance) replying WorkflowStarted(instance.id)
+  }
+
+  when(SendMessage) {
+    case Event(ProcessNextMessage, InitializedWorkflow(instance)) =>
+      log.info("Sending order Message 1 to the orchestrator")
+      goto(WaitingForMessage) using InitializedWorkflow(instance) replying TaskToProcess(Message(1, 1, 0))
   }
 
   when(WaitingForMessage) {
-    case Event(WorkflowActor.ReceiveMessage(message), InitializedWorkflow(instance)) =>
-      println(s"Message with id $message received!")
+    case Event(WorkflowActor.MessageUpdate(message), InitializedWorkflow(instance)) =>
+      log.info(s"Message with id ${message.id} Updated!")
+      self ! DoNotify(message)
       goto(Notify)
   }
 
   when(Notify) {
-    case Event(_, message: Message) if message.completion != 100 => goto(WaitingForMessage)
-    case Event(_, message: Message) if message.completion == 100 => goto(Idle)
+    case Event(DoNotify(message: Message), InitializedWorkflow(instance)) if message.completion != 100 =>
+      log.info(s"Notify the message $message")
+      goto(SendMessage)
+    case Event(DoNotify(message: Message), InitializedWorkflow(instance)) if message.completion == 100 =>
+      log.info(s"Message $message fully processed")
+      goto(SendMessage)
   }
 
   initialize()

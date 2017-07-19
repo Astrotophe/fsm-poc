@@ -2,39 +2,47 @@
 package fr.canal.rocket.workflow.engine
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import fr.canal.rocket.workflow.engine.WorkflowsActor.{GetWorkflows, StartWorkflow, UnknownWorkflow}
+import akka.event.Logging
+import fr.canal.rocket.workflow.engine.WorkflowActor.{MessageUpdate, ProcessNextMessage, TaskToProcess, WorkflowStarted}
+import fr.canal.rocket.workflow.engine.WorkflowsActor.{GetWorkflows, StartWorkflow}
 
 case class Message(id: Int, processId: Int, completion: Int) extends Data
 
-class Sender(worflowsActorRef: ActorRef)(implicit system: ActorSystem) extends Actor {
+class Orchestrator(worflowsActorRef: ActorRef)(implicit system: ActorSystem) extends Actor {
+
+  val log = Logging(context.system, this)
+
   override def receive: Receive = {
-    case StartWorkflow =>
-      worflowsActorRef ! StartWorkflow("Workflow1")
+    case StartWorkflow(name: String) =>
+      log.info(s"Workflow with name $name is being started")
+      worflowsActorRef ! StartWorkflow(name)
     case  GetWorkflows =>
       worflowsActorRef ! GetWorkflows
-    case x@_ =>
-      println(x)
+    case WorkflowStarted(name: String) =>
+      sender() ! ProcessNextMessage
+    case TaskToProcess(message: Message) =>
+      log.info(s"Message received $message")
+      sender() ! MessageUpdate(message.copy(completion = 100))
   }
 }
 
 class Receiver extends Actor {
+
+  val log = Logging(context.system, this)
+
   override def receive: Receive = {
     case message:Message =>
-      println(s"Receiver with the path ${self.path} received the message with the process id ${message.processId}")
+      log.info(s"Receiver with the path ${self.path} received the message with the process id ${message.processId}")
   }
-
-
-
-
 }
 
 object AkkaQuickstart extends App {
 
-  implicit val system: ActorSystem = ActorSystem("test")
+  implicit val system: ActorSystem = ActorSystem("workflow-engine")
 
   val workflowsActor = WorkflowsActor()
 
-  val sender = system.actorOf(Props(new Sender(workflowsActor)), "sender")
+  val orchestrator = system.actorOf(Props(new Orchestrator(workflowsActor)), "orchestrator")
 
   /*
 
@@ -49,7 +57,7 @@ object AkkaQuickstart extends App {
 
   */
 
-  sender ! StartWorkflow
-  sender ! GetWorkflows
+  orchestrator ! StartWorkflow("IngestEST")
+  orchestrator ! GetWorkflows
 
 }

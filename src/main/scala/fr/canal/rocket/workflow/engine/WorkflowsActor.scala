@@ -2,13 +2,13 @@ package fr.canal.rocket.workflow.engine
 
 import java.util.UUID
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import fr.canal.rocket.workflow.engine.WorkflowsActor.{GetWorkflows, StartWorkflow, UnknownWorkflow}
 import fr.canal.rocket.workflow.engine.model.{WorkflowInstance, Workflows}
 
 object WorkflowsActor {
 
-  def apply()(implicit system: ActorSystem) = system.actorOf(Props[WorkflowsActor], "workflows-actor")
+  def apply()(implicit system: ActorSystem): ActorRef = system.actorOf(Props[WorkflowsActor], "workflows-actor")
 
   case class StartWorkflow(id: String)
   case object GetWorkflows
