@@ -8,6 +8,14 @@ import fr.canal.rocket.workflow.engine.WorkflowsActor.{GetWorkflows, StartWorkfl
 
 case class Message(id: Int, processId: Int, completion: Int) extends Data
 
+
+/**
+  *
+  * This is the orchestator
+  *
+  * @param worflowsActorRef Reference to the father of all workflows
+  * @param system ActorySystem from the engine
+  */
 class Orchestrator(worflowsActorRef: ActorRef)(implicit system: ActorSystem) extends Actor {
 
   val log = Logging(context.system, this)
@@ -26,16 +34,11 @@ class Orchestrator(worflowsActorRef: ActorRef)(implicit system: ActorSystem) ext
   }
 }
 
-class Receiver extends Actor {
-
-  val log = Logging(context.system, this)
-
-  override def receive: Receive = {
-    case message:Message =>
-      log.info(s"Receiver with the path ${self.path} received the message with the process id ${message.processId}")
-  }
-}
-
+/**
+  *
+  * Quick Launcher
+  *
+  */
 object AkkaQuickstart extends App {
 
   implicit val system: ActorSystem = ActorSystem("workflow-engine")
@@ -43,19 +46,6 @@ object AkkaQuickstart extends App {
   val workflowsActor = WorkflowsActor()
 
   val orchestrator = system.actorOf(Props(new Orchestrator(workflowsActor)), "orchestrator")
-
-  /*
-
-  val receiver1 = system.actorOf(Props[Receiver], "workflow1")
-  val receiver2 = system.actorOf(Props[Receiver], "workflow2")
-
-  val message1 = Message(1,1,0)
-  val message2 = Message(2,2,0)
-
-  system.actorSelection(s"/user/workflow${message1.processId}") ! message1
-  system.actorSelection(s"/user/workflow${message2.processId}") ! message2
-
-  */
 
   orchestrator ! StartWorkflow("IngestEST")
   orchestrator ! GetWorkflows
