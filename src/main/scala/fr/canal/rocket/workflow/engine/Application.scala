@@ -4,8 +4,9 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.event.Logging
 import fr.canal.rocket.workflow.engine.WorkflowActor.{MessageUpdate, ProcessNextMessage, TaskToProcess, WorkflowStarted}
 import fr.canal.rocket.workflow.engine.WorkflowsActor.{GetWorkflows, StartWorkflow}
+
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Message(id: Int, processId: Int, completion: Int) extends Data
 
@@ -17,9 +18,19 @@ case class Message(id: Int, processId: Int, completion: Int) extends Data
   * @param worflowsActorRef Reference to the father of all workflows
   * @param system           ActorySystem from the engine
   */
-class Orchestrator(worflowsActorRef: ActorRef)(implicit system: ActorSystem) extends Actor {
+class Orchestrator(worflowsActorRef: ActorRef)(implicit system: ActorSystem, executionContext: ExecutionContext) extends Actor {
 
   val log = Logging(context.system, this)
+
+  override def preStart(): Unit = {
+    super.preStart()
+    log.debug("Orchestrator started")
+  }
+
+  override def postStop(): Unit = {
+    super.postStop()
+    log.debug("Orchestrator stopped")
+  }
 
   override def receive: Receive = {
 
@@ -50,6 +61,8 @@ class Orchestrator(worflowsActorRef: ActorRef)(implicit system: ActorSystem) ext
 object AkkaQuickstart extends App {
 
   implicit val system: ActorSystem = ActorSystem("workflow-engine")
+  // ExecutionContext from the default dispatcher
+  implicit val executionContext = system.dispatchers.defaultGlobalDispatcher
 
   val workflowsActor = WorkflowsActor()
 
