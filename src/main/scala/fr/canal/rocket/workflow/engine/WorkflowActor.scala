@@ -56,13 +56,14 @@ class WorkflowActor extends Actor with FSM[State, Data] {
   when(Idle) {
     case Event(WorkflowActor.StartWorkflow(instance: WorkflowInstance), Uninitialized) =>
       log.info(s"Workflow instance ${instance.id} begins")
+      log.info(s"The worflow description set up is : ${instance.workflow.description}")
       goto(SendMessage) using InitializedWorkflow(instance) replying WorkflowStarted(instance.id)
   }
 
   when(SendMessage) {
     case Event(ProcessNextMessage, InitializedWorkflow(instance)) =>
-      log.info("Sending order Message 1 to the orchestrator")
-      goto(WaitingForMessage) using InitializedWorkflow(instance) replying TaskToProcess(Message(1, 1, 0))
+      log.info(s"Sending order Message ${instance.workflow.steps.head.id} to the orchestrator")
+      goto(WaitingForMessage) using InitializedWorkflow(instance) replying TaskToProcess(instance.workflow.steps.head)
   }
 
   when(WaitingForMessage) {
